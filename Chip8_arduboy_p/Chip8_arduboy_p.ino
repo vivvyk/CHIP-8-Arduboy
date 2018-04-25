@@ -188,7 +188,6 @@ void emulateCycle(){
     pc += 2;
     
   }else if(decoded == 0xD000){
-    Serial.println("Entered!");
     unsigned short heightl = opcode & 0x000F;
     unsigned short pixel = 0;
 
@@ -210,16 +209,18 @@ void emulateCycle(){
         else
           //pixel = memory[I + row];
           pixel = pgm_read_word_near(memory + I + row);
-        
+        Serial.println(I);
+        Serial.println(row);
+        Serial.println(pixel);
+        Serial.println("-----------");
         if(pixel & (0x80 >> col) != 0){
           uint8_t pos1 = (V[x] + col) % 64;
           uint8_t pos2 = (V[y] + row) % 32;
-
-          if(arduboy.getPixel(pos1, pos2) == 1){ //TEST EQUIVALENCE FIRST!
-            arduboy.drawPixel(pos1, pos2, WHITE);
+          if(arduboy.getPixel(pos1, pos2)){
+            arduboy.drawPixel(pos1, pos2, BLACK);
             V[15] = 1; 
           }else
-            arduboy.drawPixel(pos1, pos2, BLACK);
+            arduboy.drawPixel(pos1, pos2, WHITE);
         }
         
         
@@ -336,7 +337,6 @@ void loop() {
   arduboy.setCursor(1, 1);
   
   emulateCycle();
-  Serial.println(opcode);
   arduboy.display();
 
 }
