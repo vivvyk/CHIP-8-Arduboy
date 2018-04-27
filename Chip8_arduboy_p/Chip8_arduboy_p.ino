@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 Arduboy arduboy;
-
+//INIT
 unsigned short opcode;
 unsigned short pc = 0x200;
 unsigned short I = 0;
@@ -17,6 +17,7 @@ unsigned char sound_timer = 0;
 
 unsigned char keys[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+//For now these are constant length arrays of length 16! This means our mapping from editable index to RAM_memory will be (index % 16). 
 int RAM_indices[16] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 unsigned char RAM_memory[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -32,28 +33,33 @@ void setup() {
 }
 
 void emulateCycle(){
-  
+  /*Emulates cycle by decoding and executing opcode.
+   * Note that any time we read from PROGMEM, we need to make sure the value we're grabbing hasn't been reassigned to RAM_memory.
+   * We don't need to pass pointers in, we can edit arrays and counters in global space. 
+   */
   unsigned short decoded = 0;
   unsigned short x = 0;
   unsigned short y = 0;
+
   
-  bool dRAM_1 = false;
-  bool dRAM_2 = false;
+  bool dRAM_1 = false; //Will need to access RAM_memory for pc.
+  bool dRAM_2 = false; //Will need to access RAM_memory for pc + 1.
   int pcind = 0;
   int pc1ind = 0;
   for(int i = 0; i < 16; i++){
-    if(RAM_indices[i] == pc)
+    if(RAM_indices[i] == pc){ //pc is in dynamic memory.
       dRAM_1 = true;
       pcind = i;
-
-    if(RAM_indices[i] == pc + 1)
+    }
+    if(RAM_indices[i] == pc + 1){ //pc + 1 is dynamic memory.
       dRAM_2 = true;
       pc1ind = i;
+    }
   }
 
   unsigned char byte1;
   unsigned char byte2;
-  if(dRAM_1 && dRAM_2){
+  if(dRAM_1 && dRAM_2){ //Both pc and pc + 1 are in dynamic memory.
     opcode = RAM_memory[pcind] << 8 | RAM_memory[pc1ind];
   }else if(dRAM_1){
     byte2 = pgm_read_word_near(memory + pc + 1);
@@ -61,8 +67,9 @@ void emulateCycle(){
   }else if(dRAM_2){
     byte1 = pgm_read_word_near(memory + pc);
     opcode = byte1 << 8 | RAM_memory[pc1ind];
-  }else{
-    byte1 = pgm_read_word_near(memory + pc);
+  }else{ //Neither are in dynamic memory. MOST LIKELY CASE.
+    
+    byte1 = pgm_read_word_near(memory + pc); //Function for reading from PROGMEM
     byte2 = pgm_read_word_near(memory + pc + 1);
     opcode = byte1 << 8 | byte2;
   }
@@ -72,9 +79,10 @@ void emulateCycle(){
   x = (opcode & 0x0F00) >> 8;
   y = (opcode & 0x00F0) >> 4;
 
+  //OPCODES AS REGULAR! SEE COMMENTS FOR CHANGES. FOR ORIGINAL SEE PYTHON FILE.
   if(decoded == 0x0000){
     if(opcode == 0x00E0){        
-      arduboy.clear();
+      arduboy.clear(); //Clears screen.
       pc += 2;
       
     }else if(opcode == 0x00EE){
@@ -184,19 +192,20 @@ void emulateCycle(){
     pc = (opcode & 0x0FFF) + V[0];  
     
   }else if(decoded == 0xC000){
-    V[x] = (opcode & 0x00FF) & (rand() % 255);  
+    V[x] = (opcode & 0x00FF) & (rand() % 255); //RANDOM INTEGER 
     pc += 2;
     
   }else if(decoded == 0xD000){
     unsigned short heightl = opcode & 0x000F;
+    Serial.println(opcode);
     unsigned short pixel = 0;
 
     V[15] = 0;
     
-    for (int row = 0; row < heightl; row++){
+    for(int row = 0; row <= heightl; row++){
       for(int col = 0; col < 8; col++){
         
-        bool dRAM_3 = false;
+        bool dRAM_3 = false; //Pixel is taken from memory, so we need to check our RAM array!
         int pc2ind = 0;
         for(int i = 0; i < 16; i++){
           if(RAM_indices[i] == I + row)
@@ -216,8 +225,8 @@ void emulateCycle(){
         if(pixel & (0x80 >> col) != 0){
           uint8_t pos1 = (V[x] + col) % 64;
           uint8_t pos2 = (V[y] + row) % 32;
-          if(arduboy.getPixel(pos1, pos2)){
-            arduboy.drawPixel(pos1, pos2, BLACK);
+          if(arduboy.getPixel(pos1, pos2)){ //This does evaluate to zero or 1...
+            arduboy.drawPixel(pos1, pos2, BLACK); //Changes white to black...
             V[15] = 1; 
           }else
             arduboy.drawPixel(pos1, pos2, WHITE);
@@ -279,13 +288,14 @@ void emulateCycle(){
       pc += 2; 
       
     }else if(last_digits == 0x33){
-      RAM_memory[0] = V[x] / 100;
-      RAM_memory[1] = (V[x] / 10) % 10;
-      RAM_memory[2] = (V[x] % 100) % 10;
+      //Recall that we write modulo 16.
+      RAM_memory[I % 16] = V[x] / 100;
+      RAM_memory[(I + 1) % 16] = (V[x] / 10) % 10;
+      RAM_memory[(I + 2) % 16] = (V[x] % 100) % 10;
 
-      RAM_indices[0] = I;
-      RAM_indices[1] = I + 1;
-      RAM_indices[2] = I + 2;
+      RAM_indices[I % 16] = I;
+      RAM_indices[(I + 1) % 16] = I + 1;
+      RAM_indices[(I + 2) % 16] = I + 2;
 
       pc += 2;
       
@@ -294,7 +304,8 @@ void emulateCycle(){
       for(int i = 0; i < 16; i++){
         if(i == x + 1)
           break;
-      //writing to mem, forego for now.
+      //writing to mem, forego for now- this opcode is not used for Brix.ch8.
+      //we can quickly implement this in a similar fashion to the previous opcode.
         
       }
 
@@ -304,6 +315,7 @@ void emulateCycle(){
       for(int i = 0; i < 16; i++){
         if(i == x + 1)
           break;
+        //Final memory read.
         if(I + i == RAM_indices[i])
           V[i] = RAM_memory[i];
         else
