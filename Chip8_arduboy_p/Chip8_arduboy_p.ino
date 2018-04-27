@@ -35,7 +35,8 @@ void setup() {
 void emulateCycle(){
   /*Emulates cycle by decoding and executing opcode.
    * Note that any time we read from PROGMEM, we need to make sure the value we're grabbing hasn't been reassigned to RAM_memory.
-   * We don't need to pass pointers in, we can edit arrays and counters in global space. 
+   * We don't need to pass pointers in, we can edit arrays and counters in global space.
+   * No graphics map implemented. This means the game should show up as a 64 * 32 square on the arduboy (only half the screen).
    */
   unsigned short decoded = 0;
   unsigned short x = 0;
