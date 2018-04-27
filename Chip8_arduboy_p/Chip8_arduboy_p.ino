@@ -306,7 +306,8 @@ void emulateCycle(){
           break;
       //writing to mem, forego for now- this opcode is not used for Brix.ch8.
       //we can quickly implement this in a similar fashion to the previous opcode.
-        
+      RAM_memory[(I + i) % 16] = V[i];
+      RAM_indices[(I + i) % 16] = i;
       }
 
       pc += 2;
