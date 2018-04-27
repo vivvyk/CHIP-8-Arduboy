@@ -203,7 +203,7 @@ void emulateCycle(){
 
     V[15] = 0;
     
-    for(int row = 0; row <= heightl; row++){
+    for(int row = 0; row < heightl; row++){
       for(int col = 0; col < 8; col++){
         
         bool dRAM_3 = false; //Pixel is taken from memory, so we need to check our RAM array!
