@@ -76,7 +76,6 @@ class chip8core:
         #Decode opcode
         decoded = opcode & 0xF000
 
-        print decoded;
         #x and y are consant for opcode format.
         x = (opcode & 0x0F00) >> 8
         y = (opcode & 0x00F0) >> 4
@@ -118,6 +117,7 @@ class chip8core:
             pc += 2
         elif decoded == 0x7000: #7XNN:
             V[x] = V[x] + (opcode & 0x00FF)
+            print V[x]
             s = opcode & 0x00FF
             if s > 255:
                 V[15] = 1
@@ -189,7 +189,6 @@ class chip8core:
         elif decoded == 0xD000: #DXYN:
 
             #DXYN credit: Rubenknex
-
             p1 = V[x]
             p2 = V[y]
             height = opcode & 0x000F
@@ -200,10 +199,11 @@ class chip8core:
             for row in range(height):
                 for col in range(8):
                     pixel = memory[I+row]
-
                     if pixel & (0x80 >> col) != 0:
                         pos1 = (p1+col) % 64
                         pos2 = (p2+row) % 32
+
+                        #print pos2
 
                         if gfx[pos1, pos2] == 0xFFFFFF:
                             gfx[pos1, pos2] = 0x000000
