@@ -100,22 +100,30 @@ void emulateCycle(){
     pc = opcode & 0x0FFF;
       
   }else if(decoded == 0x3000){
-    if(V[x] == opcode & 0x00FF)
+    unsigned char opF = opcode & 0x00FF;
+    if(V[x] == opF){
       pc += 4;
-    else
+    }
+    else{
       pc += 2;
+    }
         
   }else if (decoded == 0x4000){
-    if(V[x] != opcode & 0x00FF)
+    unsigned char opF = opcode & 0x00FF;
+    if(V[x] != opF){
       pc += 4;
-    else
+    }
+    else{
       pc += 2;
+    }
       
   }else if(decoded == 0x5000){
-    if(V[x] == V[y])
+    if(V[x] == V[y]){
       pc += 4;
-    else
+    }
+    else{
       pc += 2;
+    }
     
   }else if(decoded == 0x6000){
     V[x] = opcode & 0x00FF;
@@ -123,10 +131,13 @@ void emulateCycle(){
     
   }else if(decoded == 0x7000){
     V[x] = V[x] + (opcode & 0x00FF);
-    if((opcode & 0x00FF) > 255)
+    unsigned short opF = (opcode & 0x00FF);
+    if(opF > 255){
        V[15] = 1;
-    else
+    }
+    else{
        V[15] = 0;
+    }
        
     pc += 2;
        
@@ -145,7 +156,7 @@ void emulateCycle(){
       V[x] = V[x] ^ V[y];
       pc += 2;
     }else if(last_digit == 0x4){
-      unsigned char s = V[x] + V[y];
+      unsigned char s = (int)V[x] + (int)V[y];
       V[x] = V[x] + V[y];
       if(s > 255)
         V[15] = 1;
@@ -153,7 +164,7 @@ void emulateCycle(){
         V[15] = 0;
       pc += 2;
     }else if(last_digit == 0x5){
-      unsigned char diff = V[x] - V[y];
+      unsigned char diff = (int)V[x] - (int)V[y];
       V[x] = V[x] - V[y];
       if(diff < 0)
         V[15] = 0;
@@ -214,10 +225,11 @@ void emulateCycle(){
 
         if(dRAM_3)
           pixel = RAM_memory[pc2ind];
-        else
+        else{
           //pixel = memory[I + row];
           //pixel = pgm_read_word_near(memory + I + row);
           pixel = pgm_read_byte(&(memory[I + row]));
+        }
 
       
         int px = pixel & (0x80 >> col);
@@ -226,8 +238,8 @@ void emulateCycle(){
           int pos2 = (V[y] + row) % 32;
 
           //V[y] not updated
-
-          if(arduboy.getPixel(pos1, pos2)){
+          int pixState = arduboy.getPixel(pos1, pos2);
+          if(pixState != 0){
             arduboy.drawPixel(pos1, pos2, BLACK);
             V[15] = 1; 
           }else
@@ -243,13 +255,15 @@ void emulateCycle(){
   }else if(decoded == 0xE000){
     unsigned short last_digit = opcode & 0x000F;
     if(last_digit == 0xE){
-      if(keys[V[x]] == 1)
+      unsigned char kV = keys[V[x]];
+      if(kV == 1)
         pc += 4;
       else
         pc += 2;
           
     }else if(last_digit == 0x1){
-      if(keys[V[x]] == 0)
+      unsigned char kV = keys[V[x]];
+      if(kV == 0)
         pc += 4;
       else
         pc += 2;
@@ -319,10 +333,12 @@ void emulateCycle(){
         if(i == x + 1)
           break;
         //Final memory read.
-        if(I + i == RAM_indices[i])
+        if(I + i == RAM_indices[i]){
           V[i] = RAM_memory[i];
-        else
-          V[i] = pgm_read_word_near(memory + I + i); 
+        }else{
+          //V[i] = pgm_read_word_near(memory + I + i); 
+          V[i] = pgm_read_byte(&(memory[I + i]));
+        }
       }  
       pc += 2;
     }
@@ -338,6 +354,36 @@ void emulateCycle(){
 
   if(delay_timer > 0)
     delay_timer -= 1;
+
+  Serial.print(opcode);
+  Serial.print(" ");
+  printArray(16, V);
+  
+}
+
+void printArray(int len, unsigned char arr[]){
+  Serial.print("[");
+  for(int i = 0; i < len; i++){
+    Serial.print(arr[i]);
+    Serial.print(", ");  
+    
+  }
+  Serial.print("]");
+  Serial.print("\n");
+  
+
+}
+
+void setKeys(){
+   unsigned char state[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+   if(arduboy.pressed(LEFT_BUTTON)){
+      state[4] = 1; 
+   }else if(arduboy.pressed(RIGHT_BUTTON)){
+      state[6] = 1; 
+   }
+
+   //keys = state;
+   memcpy(keys, state, 16);
   
 }
 
@@ -351,6 +397,7 @@ void loop() {
 
   for(int i = 0; i < 14; i++){
     emulateCycle(); 
+    setKeys();
   }
   arduboy.display();
 

@@ -80,6 +80,7 @@ class chip8core:
         x = (opcode & 0x0F00) >> 8
         y = (opcode & 0x00F0) >> 4
 
+        #print decoded
         #Opcode description on https://en.wikipedia.org/wiki/CHIP-8
 
         if decoded == 0x0000:
@@ -109,6 +110,7 @@ class chip8core:
                 pc += 2
         elif decoded == 0x5000: #5XY0:
             if V[x] == V[y]:
+                print "ENTERED"
                 pc += 4
             else:
                 pc += 2
@@ -117,7 +119,6 @@ class chip8core:
             pc += 2
         elif decoded == 0x7000: #7XNN:
             V[x] = V[x] + (opcode & 0x00FF)
-            print V[x]
             s = opcode & 0x00FF
             if s > 255:
                 V[15] = 1
@@ -288,6 +289,9 @@ class chip8core:
 
         if delay_timer > 0:
             delay_timer -= 1
+
+
+        #print opcode, V
 
     def setkeys(self):
         '''
