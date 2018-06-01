@@ -20,7 +20,7 @@ class chip8core:
         memory = np.array([0 for i in range(4096)], dtype=np.uint8)
 
         pygame.init()
-        #Initializes screen
+        #Initializes screen: echo -n -e '\xD0\xFF' > 1.ch8
         window = pygame.display.set_mode((1024, 512))
         surf = pygame.Surface((64, 32))
         gfx = pygame.PixelArray(surf)
@@ -110,7 +110,6 @@ class chip8core:
                 pc += 2
         elif decoded == 0x5000: #5XY0:
             if V[x] == V[y]:
-                print "ENTERED"
                 pc += 4
             else:
                 pc += 2

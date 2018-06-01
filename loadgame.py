@@ -43,4 +43,4 @@ if __name__ == "__main__":
             print i, item
 
     gamefile = open("game.txt", "w")
-    gamefile.writelines(["%s," % item for item in game])
+    gamefile.writelines(["0x%s," % format(item, '02X') for item in game])
