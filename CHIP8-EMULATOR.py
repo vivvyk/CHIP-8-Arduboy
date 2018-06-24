@@ -16,7 +16,7 @@ def loadgame(filen):
         cpu.memory[0x200 + i] = ord(byte) #Converts byte to integer
         #cpu.mem_change.add(0x200 + i)
 
-    print type(cpu.memory[0x200])
+    #print type(cpu.memory[0x200])
 
 if __name__ == "__main__":
     pygame.init()
@@ -24,14 +24,18 @@ if __name__ == "__main__":
     chip8 = cpu.chip8core() #object
     chip8.initialize() #Initializes cpu components
 
-    #loadgame(sys.argv[1]) #loadsgames
-    cpu.memory = lg.mem
+    loadgame(sys.argv[1]) #loadsgames
+    #cpu.memory = lg.mem
     sleep_counter = 0
+    cycle = 0
 
     while True:
 
         #Emulation loop
+        #print cycle
         chip8.execute_opcode()
+        #print "---"
+        cycle += 1
         chip8.setkeys()
 
         if cpu.drawflag:
@@ -42,7 +46,7 @@ if __name__ == "__main__":
 
         sleep_counter += 1
 
-        if sleep_counter == 40:
+        if sleep_counter == 40: #normally 40
             #Delay
             sleep_counter = 0
-            time.sleep(0.002)
+            time.sleep(0.02) #normally 0.002

@@ -83,6 +83,8 @@ class chip8core:
         #print decoded
         #Opcode description on https://en.wikipedia.org/wiki/CHIP-8
 
+        #print format(opcode, "02X")
+
         if decoded == 0x0000:
             if opcode == 0x00E0: #00E0
                 gfx.surface.fill((0, 0, 0)) #Clears screen
@@ -208,6 +210,7 @@ class chip8core:
                         if gfx[pos1, pos2] == 0xFFFFFF:
                             gfx[pos1, pos2] = 0x000000
                             mem_gfx.add((pos1, pos2))
+                            #print "COLLISION", format(opcode, "02X")
                             V[15] = 1
                         else:
                             gfx[pos1, pos2] = 0xFFFFFF
@@ -277,6 +280,7 @@ class chip8core:
                     if i == x + 1:
                         break
                     V[i] = memory[I + i]
+                    print I + i
                 pc += 2
 
 
